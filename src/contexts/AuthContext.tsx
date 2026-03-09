@@ -1,14 +1,17 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export type UserRole = "restaurant" | "volunteer";
+
 interface User {
   name: string;
   email: string;
+  role: UserRole;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => boolean;
-  register: (name: string, email: string, password: string) => boolean;
+  register: (name: string, email: string, password: string, role: UserRole) => boolean;
   logout: () => void;
 }
 
@@ -20,9 +23,9 @@ export const useAuth = () => {
   return ctx;
 };
 
-// Simple in-memory store for demo
-const users: { name: string; email: string; password: string }[] = [
-  { name: "Demo User", email: "demo@test.com", password: "demo123" },
+const users: { name: string; email: string; password: string; role: UserRole }[] = [
+  { name: "Green Kitchen", email: "restaurant@test.com", password: "demo123", role: "restaurant" },
+  { name: "John Volunteer", email: "volunteer@test.com", password: "demo123", role: "volunteer" },
 ];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -31,15 +34,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (email: string, password: string) => {
     const found = users.find((u) => u.email === email && u.password === password);
     if (found) {
-      setUser({ name: found.name, email: found.email });
+      setUser({ name: found.name, email: found.email, role: found.role });
       return true;
     }
     return false;
   };
 
-  const register = (name: string, email: string, password: string) => {
+  const register = (name: string, email: string, password: string, role: UserRole) => {
     if (users.find((u) => u.email === email)) return false;
-    users.push({ name, email, password });
+    users.push({ name, email, password, role });
     return true;
   };
 

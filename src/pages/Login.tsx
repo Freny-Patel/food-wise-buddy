@@ -24,7 +24,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel - decorative */}
       <div className="hidden lg:flex lg:w-1/2 hero-gradient relative overflow-hidden items-center justify-center">
         <div className="absolute inset-0 opacity-10">
           {[...Array(6)].map((_, i) => (
@@ -47,12 +46,11 @@ const Login = () => {
           </div>
           <h2 className="text-4xl font-display font-bold text-primary-foreground mb-4">Welcome Back</h2>
           <p className="text-primary-foreground/80 text-lg max-w-sm">
-            Continue your journey to reduce food waste and make a positive impact.
+            Continue your journey to reduce food waste and help those in need.
           </p>
         </div>
       </div>
 
-      {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8 animate-fade-up">
           <div>
@@ -75,30 +73,14 @@ const Login = () => {
               <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="demo@test.com"
-                  className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Input id="email" type="email" placeholder="you@example.com" className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} required />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="demo123"
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
             </div>
             <Button type="submit" variant="hero" size="lg" className="w-full">
@@ -112,9 +94,12 @@ const Login = () => {
               Create one
             </Link>
           </p>
-          <p className="text-center text-muted-foreground text-xs">
-            Demo: demo@test.com / demo123
-          </p>
+
+          <div className="bg-muted rounded-lg p-4 space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">Demo Accounts:</p>
+            <p className="text-xs text-muted-foreground">🍽️ Restaurant: restaurant@test.com / demo123</p>
+            <p className="text-xs text-muted-foreground">🤝 Volunteer: volunteer@test.com / demo123</p>
+          </div>
         </div>
       </div>
     </div>
