@@ -1,22 +1,23 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, User, Mail, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Leaf, User, Mail, Lock, AlertCircle, CheckCircle2, UtensilsCrossed, HandHeart } from "lucide-react";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("volunteer");
   const [error, setError] = useState("");
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (register(name, email, password)) {
+    if (register(name, email, password, role)) {
       navigate("/login");
     } else {
       setError("Email already exists");
@@ -25,7 +26,6 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel - form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8 animate-fade-up">
           <div>
@@ -33,7 +33,7 @@ const Register = () => {
               ← Back to home
             </Link>
             <h1 className="text-3xl font-display font-bold text-foreground">Create Account</h1>
-            <p className="text-muted-foreground mt-2">Join EcoPlate and start reducing food waste</p>
+            <p className="text-muted-foreground mt-2">Join EcoPlate and help reduce food waste</p>
           </div>
 
           {error && (
@@ -44,11 +44,44 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Role Selection */}
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label>I am a</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole("restaurant")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    role === "restaurant"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <UtensilsCrossed className="w-6 h-6" />
+                  <span className="font-medium text-sm">Restaurant</span>
+                  <span className="text-xs opacity-70">Post surplus food</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("volunteer")}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                    role === "volunteer"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <HandHeart className="w-6 h-6" />
+                  <span className="font-medium text-sm">Volunteer</span>
+                  <span className="text-xs opacity-70">Pick up & deliver</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">{role === "restaurant" ? "Restaurant Name" : "Full Name"}</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input id="name" placeholder="John Doe" className="pl-10" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input id="name" placeholder={role === "restaurant" ? "Green Kitchen" : "John Doe"} className="pl-10" value={name} onChange={(e) => setName(e.target.value)} required />
               </div>
             </div>
             <div className="space-y-2">
@@ -79,7 +112,6 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Right panel - decorative */}
       <div className="hidden lg:flex lg:w-1/2 warm-gradient relative overflow-hidden items-center justify-center">
         <div className="text-center z-10 px-12">
           <div className="w-20 h-20 rounded-2xl bg-accent-foreground/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8">
@@ -88,9 +120,9 @@ const Register = () => {
           <h2 className="text-4xl font-display font-bold text-accent-foreground mb-6">Why EcoPlate?</h2>
           <div className="space-y-4 text-left max-w-sm">
             {[
-              "Track daily food preparation & waste",
-              "AI-powered consumption predictions",
-              "Reduce costs and environmental impact",
+              "Restaurants post surplus food easily",
+              "Volunteers pick up & deliver to those in need",
+              "Reduce waste and feed the hungry",
             ].map((item) => (
               <div key={item} className="flex items-start gap-3 text-accent-foreground/90">
                 <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
