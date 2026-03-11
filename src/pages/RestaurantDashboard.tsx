@@ -165,7 +165,7 @@ const RestaurantDashboard = () => {
         {/* My Donations Table */}
         <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
           <div className="p-6 border-b border-border">
-            <h3 className="font-display font-semibold text-lg text-card-foreground">My Posted Food</h3>
+            <h3 className="font-display font-semibold text-lg text-card-foreground">My Posted Food & History</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">

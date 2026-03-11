@@ -120,10 +120,10 @@ const VolunteerDashboard = () => {
           )}
         </div>
 
-        {/* My Claims */}
+        {/* My Claims & History */}
         {myClaimedDonations.length > 0 && (
           <div>
-            <h2 className="font-display font-bold text-xl text-foreground mb-4">📦 My Claimed Pickups</h2>
+            <h2 className="font-display font-bold text-xl text-foreground mb-4">📦 My Claims & Delivery History</h2>
             <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
