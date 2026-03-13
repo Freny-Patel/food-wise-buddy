@@ -14,46 +14,9 @@ export interface FoodDonation {
 }
 
 // Shared in-memory store
-export const donations: FoodDonation[] = [
-  {
-    id: "1",
-    restaurantName: "Green Kitchen",
-    restaurantEmail: "restaurant@test.com",
-    foodItem: "Cooked Rice",
-    quantity: 15,
-    unit: "kg",
-    location: "MG Road, Bangalore",
-    pickupTime: "2026-03-09 18:00",
-    postedAt: "2026-03-09 16:30",
-    status: "available",
-  },
-  {
-    id: "2",
-    restaurantName: "Green Kitchen",
-    restaurantEmail: "restaurant@test.com",
-    foodItem: "Vegetable Curry",
-    quantity: 8,
-    unit: "kg",
-    location: "MG Road, Bangalore",
-    pickupTime: "2026-03-09 19:00",
-    postedAt: "2026-03-09 16:45",
-    status: "available",
-  },
-  {
-    id: "3",
-    restaurantName: "Spice Garden",
-    restaurantEmail: "spice@test.com",
-    foodItem: "Bread Rolls",
-    quantity: 50,
-    unit: "pieces",
-    location: "Koramangala, Bangalore",
-    pickupTime: "2026-03-09 20:00",
-    postedAt: "2026-03-09 17:00",
-    status: "available",
-  },
-];
+export const donations: FoodDonation[] = [];
 
-let nextId = 4;
+let nextId = 1;
 
 export const addDonation = (donation: Omit<FoodDonation, "id" | "status" | "postedAt">) => {
   const newDonation: FoodDonation = {
