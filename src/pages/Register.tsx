@@ -4,7 +4,8 @@ import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, User, Mail, Lock, AlertCircle, CheckCircle2, UtensilsCrossed, HandHeart } from "lucide-react";
+import { Leaf, User, Mail, Lock, AlertCircle, CheckCircle2, UtensilsCrossed, HandHeart, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -12,16 +13,22 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("volunteer");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (register(name, email, password, role)) {
+    setSubmitting(true);
+    setError("");
+    const result = await register(name, email, password, role);
+    if (result.success) {
+      toast.success("Account created! You can now sign in.");
       navigate("/login");
     } else {
-      setError("Email already exists");
+      setError(result.error || "Registration failed");
     }
+    setSubmitting(false);
   };
 
   return (
@@ -44,7 +51,6 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Role Selection */}
             <div className="space-y-2">
               <Label>I am a</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -95,10 +101,11 @@ const Register = () => {
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
               </div>
             </div>
-            <Button type="submit" variant="hero" size="lg" className="w-full">
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
+              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Create Account
             </Button>
           </form>
