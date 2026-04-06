@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      food_posts: {
+        Row: {
+          claimed_by: string | null
+          claimed_by_name: string | null
+          created_at: string
+          food_item: string
+          id: string
+          location: string
+          pickup_time: string
+          quantity: number
+          restaurant_name: string
+          status: string
+          unit: string
+          user_id: string
+        }
+        Insert: {
+          claimed_by?: string | null
+          claimed_by_name?: string | null
+          created_at?: string
+          food_item: string
+          id?: string
+          location: string
+          pickup_time: string
+          quantity: number
+          restaurant_name: string
+          status?: string
+          unit?: string
+          user_id: string
+        }
+        Update: {
+          claimed_by?: string | null
+          claimed_by_name?: string | null
+          created_at?: string
+          food_item?: string
+          id?: string
+          location?: string
+          pickup_time?: string
+          quantity?: number
+          restaurant_name?: string
+          status?: string
+          unit?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +91,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "restaurant" | "volunteer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +218,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["restaurant", "volunteer"],
+    },
   },
 } as const
