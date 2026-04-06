@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { donations, addDonation } from "@/data/donationStore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, LogOut, Plus, Package, Clock, MapPin, CheckCircle2, Loader2, X } from "lucide-react";
-import { useEffect } from "react";
+import { Leaf, LogOut, Plus, Package, Clock, MapPin, CheckCircle2, X, Loader2 } from "lucide-react";
+
+interface FoodPost {
+  id: string;
+  food_item: string;
+  quantity: number;
+  unit: string;
+  location: string;
+  pickup_time: string;
+  status: string;
+  claimed_by_name: string | null;
+  created_at: string;
+}
 
 const RestaurantDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [foodItem, setFoodItem] = useState("");
@@ -17,40 +28,56 @@ const RestaurantDashboard = () => {
   const [unit, setUnit] = useState("kg");
   const [location, setLocation] = useState("");
   const [pickupTime, setPickupTime] = useState("");
-  const [, setRefresh] = useState(0);
+  const [posts, setPosts] = useState<FoodPost[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!user || user.role !== "restaurant") navigate("/login");
-  }, [user, navigate]);
+    if (!authLoading && (!user || user.role !== "restaurant")) navigate("/login");
+  }, [user, authLoading, navigate]);
 
-  if (!user) return null;
+  const fetchPosts = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("food_posts")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    if (data) setPosts(data as FoodPost[]);
+  };
 
-  const myDonations = donations.filter((d) => d.restaurantEmail === user.email);
-  const totalPosted = myDonations.length;
-  const totalClaimed = myDonations.filter((d) => d.status === "claimed" || d.status === "picked_up").length;
-  const totalAvailable = myDonations.filter((d) => d.status === "available").length;
+  useEffect(() => {
+    if (user) fetchPosts();
+  }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (authLoading || !user) return null;
+
+  const totalPosted = posts.length;
+  const totalClaimed = posts.filter((d) => d.status === "claimed" || d.status === "picked_up").length;
+  const totalAvailable = posts.filter((d) => d.status === "available").length;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addDonation({
-      restaurantName: user.name,
-      restaurantEmail: user.email,
-      foodItem,
+    setSubmitting(true);
+    await supabase.from("food_posts").insert({
+      user_id: user.id,
+      restaurant_name: user.name,
+      food_item: foodItem,
       quantity: Number(quantity),
       unit,
       location,
-      pickupTime,
+      pickup_time: pickupTime,
     });
     setFoodItem("");
     setQuantity("");
     setLocation("");
     setPickupTime("");
     setShowForm(false);
-    setRefresh((r) => r + 1);
+    setSubmitting(false);
+    fetchPosts();
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -87,7 +114,6 @@ const RestaurantDashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { icon: Package, label: "Total Posted", value: totalPosted, color: "text-primary" },
@@ -108,13 +134,11 @@ const RestaurantDashboard = () => {
           ))}
         </div>
 
-        {/* Add Food Button */}
         <Button variant="hero" onClick={() => setShowForm(!showForm)} className="gap-2">
           {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           {showForm ? "Cancel" : "Post Surplus Food"}
         </Button>
 
-        {/* Add Food Form */}
         {showForm && (
           <div className="bg-card rounded-xl p-6 shadow-card border border-border animate-fade-up">
             <h3 className="font-display font-semibold text-lg text-card-foreground mb-4">Post Surplus Food</h3>
@@ -127,11 +151,7 @@ const RestaurantDashboard = () => {
                 <Label htmlFor="quantity">Quantity</Label>
                 <div className="flex gap-2">
                   <Input id="quantity" type="number" placeholder="10" value={quantity} onChange={(e) => setQuantity(e.target.value)} required className="flex-1" />
-                  <select
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    className="rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
+                  <select value={unit} onChange={(e) => setUnit(e.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <option value="kg">kg</option>
                     <option value="pieces">pieces</option>
                     <option value="liters">liters</option>
@@ -154,15 +174,14 @@ const RestaurantDashboard = () => {
                 </div>
               </div>
               <div className="sm:col-span-2">
-                <Button type="submit" variant="hero" className="w-full sm:w-auto">
-                  <Plus className="w-4 h-4 mr-2" /> Post Food
+                <Button type="submit" variant="hero" className="w-full sm:w-auto" disabled={submitting}>
+                  {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />} Post Food
                 </Button>
               </div>
             </form>
           </div>
         )}
 
-        {/* My Donations Table */}
         <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
           <div className="p-6 border-b border-border">
             <h3 className="font-display font-semibold text-lg text-card-foreground">My Posted Food & History</h3>
@@ -180,19 +199,19 @@ const RestaurantDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {myDonations.length === 0 ? (
+                {posts.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">No food posted yet. Click "Post Surplus Food" to get started.</td>
                   </tr>
                 ) : (
-                  myDonations.map((d) => (
+                  posts.map((d) => (
                     <tr key={d.id} className="border-t border-border hover:bg-muted/50 transition-colors">
-                      <td className="px-6 py-3 text-sm text-card-foreground font-medium">{d.foodItem}</td>
+                      <td className="px-6 py-3 text-sm text-card-foreground font-medium">{d.food_item}</td>
                       <td className="px-6 py-3 text-sm text-card-foreground">{d.quantity} {d.unit}</td>
                       <td className="px-6 py-3 text-sm text-card-foreground">{d.location}</td>
-                      <td className="px-6 py-3 text-sm text-card-foreground">{d.pickupTime}</td>
+                      <td className="px-6 py-3 text-sm text-card-foreground">{d.pickup_time}</td>
                       <td className="px-6 py-3 text-sm">{statusBadge(d.status)}</td>
-                      <td className="px-6 py-3 text-sm text-card-foreground">{d.claimedByName || "—"}</td>
+                      <td className="px-6 py-3 text-sm text-card-foreground">{d.claimed_by_name || "—"}</td>
                     </tr>
                   ))
                 )}

@@ -4,22 +4,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, Mail, Lock, AlertCircle } from "lucide-react";
+import { Leaf, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(email, password)) {
+    setSubmitting(true);
+    setError("");
+    const result = await login(email, password);
+    if (result.success) {
       navigate("/dashboard");
     } else {
-      setError("Invalid email or password");
+      setError(result.error || "Invalid email or password");
     }
+    setSubmitting(false);
   };
 
   return (
@@ -83,7 +88,8 @@ const Login = () => {
                 <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </div>
             </div>
-            <Button type="submit" variant="hero" size="lg" className="w-full">
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
+              {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Sign In
             </Button>
           </form>
@@ -94,12 +100,6 @@ const Login = () => {
               Create one
             </Link>
           </p>
-
-          <div className="bg-muted rounded-lg p-4 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Demo Accounts:</p>
-            <p className="text-xs text-muted-foreground">🍽️ Restaurant: restaurant@test.com / demo123</p>
-            <p className="text-xs text-muted-foreground">🤝 Volunteer: volunteer@test.com / demo123</p>
-          </div>
         </div>
       </div>
     </div>

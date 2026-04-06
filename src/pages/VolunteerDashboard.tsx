@@ -1,42 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { donations, claimDonation, markPickedUp } from "@/data/donationStore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Leaf, LogOut, HandHeart, Package, MapPin, Clock, CheckCircle2, Truck } from "lucide-react";
-import { useEffect } from "react";
 import { toast } from "sonner";
 
+interface FoodPost {
+  id: string;
+  restaurant_name: string;
+  food_item: string;
+  quantity: number;
+  unit: string;
+  location: string;
+  pickup_time: string;
+  status: string;
+  claimed_by: string | null;
+  claimed_by_name: string | null;
+  created_at: string;
+}
+
 const VolunteerDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [, setRefresh] = useState(0);
+  const [available, setAvailable] = useState<FoodPost[]>([]);
+  const [myClaims, setMyClaims] = useState<FoodPost[]>([]);
 
   useEffect(() => {
-    if (!user || user.role !== "volunteer") navigate("/login");
-  }, [user, navigate]);
+    if (!authLoading && (!user || user.role !== "volunteer")) navigate("/login");
+  }, [user, authLoading, navigate]);
 
-  if (!user) return null;
+  const fetchData = async () => {
+    if (!user) return;
+    const [availRes, claimsRes] = await Promise.all([
+      supabase.from("food_posts").select("*").eq("status", "available").order("created_at", { ascending: false }),
+      supabase.from("food_posts").select("*").eq("claimed_by", user.id).in("status", ["claimed", "picked_up"]).order("created_at", { ascending: false }),
+    ]);
+    if (availRes.data) setAvailable(availRes.data as FoodPost[]);
+    if (claimsRes.data) setMyClaims(claimsRes.data as FoodPost[]);
+  };
 
-  const availableDonations = donations.filter((d) => d.status === "available");
-  const myClaimedDonations = donations.filter((d) => (d.status === "claimed" || d.status === "picked_up") && d.claimedBy === user.email);
+  useEffect(() => {
+    if (user) fetchData();
+  }, [user]);
 
-  const handleClaim = (id: string) => {
-    if (claimDonation(id, user.email, user.name)) {
+  if (authLoading || !user) return null;
+
+  const handleClaim = async (id: string) => {
+    const { error } = await supabase
+      .from("food_posts")
+      .update({ status: "claimed", claimed_by: user.id, claimed_by_name: user.name })
+      .eq("id", id)
+      .eq("status", "available");
+    if (!error) {
       toast.success("Food claimed! Please pick it up from the restaurant.");
-      setRefresh((r) => r + 1);
+      fetchData();
     }
   };
 
-  const handlePickedUp = (id: string) => {
-    if (markPickedUp(id)) {
-      toast.success("Marked as picked up! Thank you for helping deliver food to those in need.");
-      setRefresh((r) => r + 1);
+  const handlePickedUp = async (id: string) => {
+    const { error } = await supabase
+      .from("food_posts")
+      .update({ status: "picked_up" })
+      .eq("id", id)
+      .eq("status", "claimed");
+    if (!error) {
+      toast.success("Marked as picked up! Thank you for delivering food.");
+      fetchData();
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -60,12 +95,11 @@ const VolunteerDashboard = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { icon: Package, label: "Available Food", value: availableDonations.length, color: "text-primary" },
-            { icon: HandHeart, label: "My Claims", value: myClaimedDonations.filter((d) => d.status === "claimed").length, color: "text-accent" },
-            { icon: CheckCircle2, label: "Delivered", value: myClaimedDonations.filter((d) => d.status === "picked_up").length, color: "text-secondary" },
+            { icon: Package, label: "Available Food", value: available.length, color: "text-primary" },
+            { icon: HandHeart, label: "My Claims", value: myClaims.filter((d) => d.status === "claimed").length, color: "text-accent" },
+            { icon: CheckCircle2, label: "Delivered", value: myClaims.filter((d) => d.status === "picked_up").length, color: "text-secondary" },
           ].map((s) => (
             <div key={s.label} className="bg-card rounded-xl p-5 shadow-card border border-border animate-scale-in">
               <div className="flex items-center gap-3">
@@ -81,26 +115,25 @@ const VolunteerDashboard = () => {
           ))}
         </div>
 
-        {/* Available Food Cards */}
         <div>
           <h2 className="font-display font-bold text-xl text-foreground mb-4">🍲 Available Food for Pickup</h2>
-          {availableDonations.length === 0 ? (
+          {available.length === 0 ? (
             <div className="bg-card rounded-xl p-8 shadow-card border border-border text-center">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">No food available right now. Check back later!</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availableDonations.map((d) => (
+              {available.map((d) => (
                 <div key={d.id} className="bg-card rounded-xl p-5 shadow-card border border-border hover:shadow-elevated transition-shadow">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-display font-semibold text-card-foreground text-lg">{d.foodItem}</h3>
+                    <h3 className="font-display font-semibold text-card-foreground text-lg">{d.food_item}</h3>
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">{d.quantity} {d.unit}</span>
                   </div>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Leaf className="w-4 h-4 text-primary" />
-                      {d.restaurantName}
+                      {d.restaurant_name}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4 text-destructive" />
@@ -108,7 +141,7 @@ const VolunteerDashboard = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-4 h-4 text-accent" />
-                      Pickup by {d.pickupTime}
+                      Pickup by {d.pickup_time}
                     </div>
                   </div>
                   <Button variant="hero" className="w-full" onClick={() => handleClaim(d.id)}>
@@ -120,8 +153,7 @@ const VolunteerDashboard = () => {
           )}
         </div>
 
-        {/* My Claims & History */}
-        {myClaimedDonations.length > 0 && (
+        {myClaims.length > 0 && (
           <div>
             <h2 className="font-display font-bold text-xl text-foreground mb-4">📦 My Claims & Delivery History</h2>
             <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
@@ -137,10 +169,10 @@ const VolunteerDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {myClaimedDonations.map((d) => (
+                    {myClaims.map((d) => (
                       <tr key={d.id} className="border-t border-border hover:bg-muted/50 transition-colors">
-                        <td className="px-6 py-3 text-sm text-card-foreground font-medium">{d.foodItem}</td>
-                        <td className="px-6 py-3 text-sm text-card-foreground">{d.restaurantName}</td>
+                        <td className="px-6 py-3 text-sm text-card-foreground font-medium">{d.food_item}</td>
+                        <td className="px-6 py-3 text-sm text-card-foreground">{d.restaurant_name}</td>
                         <td className="px-6 py-3 text-sm text-card-foreground">{d.location}</td>
                         <td className="px-6 py-3 text-sm">
                           {d.status === "claimed" ? (
