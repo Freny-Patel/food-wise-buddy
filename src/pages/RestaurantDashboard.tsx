@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Leaf, LogOut, Plus, Package, Clock, MapPin, CheckCircle2, X, Loader2 } from "lucide-react";
+import WastagePrediction from "@/components/WastagePrediction";
 
 interface FoodPost {
   id: string;
@@ -181,6 +182,8 @@ const RestaurantDashboard = () => {
             </form>
           </div>
         )}
+
+        <WastagePrediction posts={posts} />
 
         <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
           <div className="p-6 border-b border-border">
